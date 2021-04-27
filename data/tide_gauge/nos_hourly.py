@@ -11,7 +11,7 @@ import os
 # ---------------------------------------------------------------------------
 # target directory
 
-nos_dir = "./"
+nos_dir = "./nos_hourly/"
 os.makedirs(nos_dir, exist_ok=True)
 
 # ---------------------------------------------------------------------------
@@ -76,13 +76,13 @@ first_year = 1900
 # ---------------------------------------------------------------------------
 # loop over stations
 
-restart = 0
+restart = 114
 
 N = len(stations)
 for k, sta in enumerate(stations[restart:]):
 
-    if sta["id"] not in ["8726520", "8443970", "9410230", "1612340"]:
-        continue
+    # if sta["id"] not in ["8726520", "8443970", "9410230", "1612340"]:
+    #     continue
 
     k0 = k + restart
 
@@ -114,118 +114,146 @@ for k, sta in enumerate(stations[restart:]):
         for m in meta
     }
 
-    # -----------------------------------------------------------------------
-    # netcdf filename
+    # ----------------------------------------------------------------------
+    # keep trying until station successfully downloads
 
-    nc_fname = nos_dir + sta["id"] + ".nc"
+    success = False
+    attempts = 1
 
-    # -----------------------------------------------------------------------
-    # if file exists, prep for appending
+    while success is False:
 
-    if os.path.exists(nc_fname):
+        try:
 
-        append = True
+            # --------------------------------------------------------------
+            # netcdf filename
 
-        ncds = nc.Dataset(nc_fname, mode="a")
+            nc_fname = nos_dir + sta["id"] + ".nc"
 
-        nc_t = ncds["time"]
-        nc_obs = ncds["observed"]
-        nc_prd = ncds["predicted"]
+            # --------------------------------------------------------------
+            # if file exists, prep for appending
 
-        jdt_last = nc_t[-1]
-        year_of_last = nc.num2date(jdt_last, units=ncds["time"].units).year
-        years = range(year_of_last, this_year + 1)
+            if os.path.exists(nc_fname):
 
-    # -----------------------------------------------------------------------
-    # if file does not exist, create ntecdf file structure
+                append = True
 
-    else:
+                ncds = nc.Dataset(nc_fname, mode="a")
 
-        append = False
+                nc_t = ncds["time"]
+                nc_obs = ncds["observed"]
+                nc_prd = ncds["predicted"]
 
-        ncds = nc.Dataset(
-            nc_fname, mode="w", clobber=True, format="NETCDF4_CLASSIC"
-        )
+                jdt_last = nc_t[-1]
+                year_of_last = nc.num2date(
+                    jdt_last, units=ncds["time"].units
+                ).year
+                years = range(year_of_last, this_year + 1)
 
-        dim_time = ncds.createDimension("time", None)
+            # --------------------------------------------------------------
+            # if file does not exist, create ntecdf file structure
 
-        nc_t = ncds.createVariable("time", "f8", dimensions=("time",))
-        nc_t.setncatts({"units": t_units})
+            else:
 
-        nc_obs = ncds.createVariable("observed", "f4", dimensions=("time",))
-        nc_obs.setncatts({"units": "meters", "datum": "MHHW"})
+                append = False
 
-        nc_prd = ncds.createVariable("predicted", "f4", dimensions=("time",))
-        nc_prd.setncatts({"units": "meters", "datum": "MHHW"})
+                ncds = nc.Dataset(
+                    nc_fname, mode="w", clobber=True, format="NETCDF4_CLASSIC"
+                )
 
-        ncds.setncatts(meta)
+                dim_time = ncds.createDimension("time", None)
 
-        years = range(first_year, this_year + 1)
+                nc_t = ncds.createVariable("time", "f8", dimensions=("time",))
+                nc_t.setncatts({"units": t_units})
 
-    # -----------------------------------------------------------------------
-    # download data by year and aggregate into dataframe
+                nc_obs = ncds.createVariable(
+                    "observed", "f4", dimensions=("time",)
+                )
+                nc_obs.setncatts({"units": "meters", "datum": "MHHW"})
 
-    df = pd.DataFrame()
+                nc_prd = ncds.createVariable(
+                    "predicted", "f4", dimensions=("time",)
+                )
+                nc_prd.setncatts({"units": "meters", "datum": "MHHW"})
 
-    for yr in years:
+                ncds.setncatts(meta)
 
-        d1 = "begin_date=" + str(yr) + "0101&"
-        d2 = "end_date=" + str(yr) + "1231&"
-        sid = "station=" + sta["id"] + "&"
+                years = range(first_year, this_year + 1)
 
-        url = url_base + d1 + d2 + sid + prdct_wl + url_end
-        data = json.loads(requests.get(url).text)
-        if "error" in data:
-            continue
-        else:
-            print("  " + str(yr))
-            times = [d["t"] for d in data["data"]]
-            heights = [
-                float(d["v"]) if len(d["v"]) > 0 else None
-                for d in data["data"]
-            ]
-            obs = pd.Series(heights, index=pd.to_datetime(times))
+            # --------------------------------------------------------------
+            # download data by year and aggregate into dataframe
 
-        url = url_base + d1 + d2 + sid + prdct_tp + res + url_end
-        data = json.loads(requests.get(url).text)
-        if "error" in data:
-            prd = pd.Series(None, index=pd.to_datetime(times))
-        else:
-            times = [d["t"] for d in data["predictions"]]
-            predict = [float(d["v"]) for d in data["predictions"]]
-            prd = pd.Series(predict, index=pd.to_datetime(times))
-            prd = prd.loc[obs.index]
+            df = pd.DataFrame()
 
-        df = df.append(pd.DataFrame({"observed": obs, "predicted": prd}))
+            for yr in years:
 
-    # -----------------------------------------------------------------------
-    # julian dates of new data
+                d1 = "begin_date=" + str(yr) + "0101&"
+                d2 = "end_date=" + str(yr) + "1231&"
+                sid = "station=" + sta["id"] + "&"
 
-    jdts = nc.date2num(df.index.to_pydatetime(), t_units)
+                url = url_base + d1 + d2 + sid + prdct_wl + url_end
+                data = json.loads(requests.get(url).text)
+                if "error" in data:
+                    continue
+                else:
+                    print("  " + str(yr))
+                    times = [d["t"] for d in data["data"]]
+                    heights = [
+                        float(d["v"]) if len(d["v"]) > 0 else None
+                        for d in data["data"]
+                    ]
+                    obs = pd.Series(heights, index=pd.to_datetime(times))
 
-    # -----------------------------------------------------------------------
-    # insert data into .nc
+                url = url_base + d1 + d2 + sid + prdct_tp + res + url_end
+                data = json.loads(requests.get(url).text)
+                if "error" in data:
+                    prd = pd.Series(None, index=pd.to_datetime(times))
+                else:
+                    times = [d["t"] for d in data["predictions"]]
+                    predict = [float(d["v"]) for d in data["predictions"]]
+                    prd = pd.Series(predict, index=pd.to_datetime(times))
+                    prd = prd.loc[obs.index]
 
-    if append:
+                df = df.append(
+                    pd.DataFrame({"observed": obs, "predicted": prd})
+                )
 
-        idx_first_new = np.where(jdts == jdt_last)[0][0] + 1
-        df_new = df.iloc[idx_first_new:, :]
+            # --------------------------------------------------------------
+            # julian dates of new data
 
-        idx_last_old = ncds["time"].shape[0]
-        nc_t[idx_last_old + 1 :] = jdts[idx_first_new:]
-        nc_obs[idx_last_old + 1 :] = df_new["observed"].values
-        nc_prd[idx_last_old + 1 :] = df_new["predicted"].values
+            jdts = nc.date2num(df.index.to_pydatetime(), t_units)
 
-    else:
+            # --------------------------------------------------------------
+            # insert data into .nc
 
-        nc_t[:] = jdts
-        nc_obs[:] = df["observed"].values
-        nc_prd[:] = df["predicted"].values
+            if append:
 
-    # -----------------------------------------------------------------------
-    # close .nc file
+                idx_first_new = np.where(jdts == jdt_last)[0][0] + 1
+                df_new = df.iloc[idx_first_new:, :]
 
-    ncds.close()
+                idx_last_old = ncds["time"].shape[0]
+                nc_t[idx_last_old + 1 :] = jdts[idx_first_new:]
+                nc_obs[idx_last_old + 1 :] = df_new["observed"].values
+                nc_prd[idx_last_old + 1 :] = df_new["predicted"].values
+
+            else:
+
+                nc_t[:] = jdts
+                nc_obs[:] = df["observed"].values
+                nc_prd[:] = df["predicted"].values
+
+            # --------------------------------------------------------------
+            # close .nc file
+
+            ncds.close()
+            success = True
+
+        except Exception as e:
+            print(e)
+            os.remove(nc_fname)
+            attempts += 1
+            print("Download failed")
+            print("\nTrying again (attempt #" + str(attempts) + ")")
+
+    # end while loop over attempts
 
     # -----------------------------------------------------------------------
 
