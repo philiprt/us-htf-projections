@@ -1,4 +1,3 @@
-[![DOI](https://zenodo.org/badge/361937622.svg)](https://zenodo.org/badge/latestdoi/361937622)
 # Rapid increases and extreme months in projections of United States high-tide flooding
 Thompson et al. (2021), *Nature Climate Change*, doi: [TBD](https://www.doi.org)
 
