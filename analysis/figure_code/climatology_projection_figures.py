@@ -69,7 +69,7 @@ def climatology_projections(analysis, subset, quantity, yoi_srch_rng):
         for shp in shapes:
             fig.add_shape(shp)
 
-        fig.update_yaxes(title_text="days", row=r, col=1)  # , side="right")
+        fig.update_yaxes(title_text="days/month", row=r, col=1)  # , side="right")
         fig.update_xaxes(
             range=[0.5, 12.5],
             tickmode="array",

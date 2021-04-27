@@ -81,7 +81,7 @@ def annual_projections(
         for trc in traces:
             fig.add_trace(trc, row=r, col=c)
 
-        fig.update_yaxes(title_text="days", row=r, col=c, side="right")
+        fig.update_yaxes(title_text="days/year", row=r, col=c, side="right")
     #     fig.update_xaxes(range=yr_lims, row=r, col=c)
 
     fig.update_layout(
