@@ -76,7 +76,7 @@ first_year = 1900
 # ---------------------------------------------------------------------------
 # loop over stations
 
-restart = 114
+restart = 0
 
 N = len(stations)
 for k, sta in enumerate(stations[restart:]):
