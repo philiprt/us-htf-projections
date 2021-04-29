@@ -16,6 +16,7 @@ def thrsh_exprmnts_panel(
 ):
 
     sta_str = anlyz.station_string(sta)
+    col = anlyz.color_palette()
 
     # -----------------------------------------------------------------------
 
@@ -74,28 +75,27 @@ def thrsh_exprmnts_panel(
 
     # -----------------------------------------------------------------------
 
-    col = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-
     ax.fill_between(
         e99_tru,
         N_xd_ci05,
         N_xd_ci95,
-        color=col[1],
-        alpha=0.5,
+        color="#BBE1F6",
+        # alpha=0.5,
         lw=0,
         label="Modeled distribution (90% CI)",
     )
+    ax.plot(e99_smpl, y, ".", color="gray", label="Observed montly counts")
     ax.fill_between(
         e99_tru,
         Nhr * mu_ci05,
         Nhr * mu_ci95,
-        color=col[3],
-        alpha=1.0,
+        color=col[5],
+        # alpha=1.0,
         lw=0,
         label="Modeled average (90% CI)",
+        zorder=10,
     )
-    ax.plot(e99_smpl, y, ".", color="gray", label="Observed montly counts")
-    ax.plot(e99_tru, tru["mu"], "--k", lw=2, label="Average observed count")
+    ax.plot(e99_tru, tru["mu"], "--k", lw=1.5, zorder=20, label="Average observed count")
     ax.set_xlim([-55, 155])
     ax.set_title(sta["name"] + " (January)")
     ax.set_xlabel("$\Delta_{99}$ (cm)")
