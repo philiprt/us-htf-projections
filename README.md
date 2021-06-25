@@ -1,5 +1,5 @@
 # Rapid increases and extreme months in projections of United States high-tide flooding
-Thompson et al. (2021), *Nature Climate Change*, doi: [TBD](https://www.doi.org)
+Thompson et al. (2021), *Nature Climate Change*, doi:[10.1038/s41558-021-01077-8](https://doi.org/10.1038/s41558-021-01077-8)
 
 This repository contains the code and notebooks used to produce the high-tide-flooding (HTF) projections and associated analysis in the paper cited above. To keep the size of the repository manageable, most of the output from the various steps in the calculations are not included, but all information needed to reproduce figures from the paper is present. Output for each analysis step can be obtained by using the repository code in the order described below. See the Projections and Analysis sections for more information.
 
